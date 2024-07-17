@@ -6,11 +6,40 @@ function rollDice(sides, numberOfDice = 1) {
     return total;
 }
 
+function rollDiceString(rollString) {
+    const regex = /^(\d*)d(\d+)([-+]\d+)?$/;
+    const match = rollString.match(regex);
+
+    if (!match) {
+        throw new Error("Invalid roll string format");
+    }
+
+    const numberOfDice = match[1] ? parseInt(match[1], 10) : 1;
+    const sides = parseInt(match[2], 10);
+    const modifier = match[3] ? parseInt(match[3], 10) : 0;
+
+    let total = 0;
+    for (let i = 0; i < numberOfDice; i++) {
+        total += Math.floor(Math.random() * sides) + 1;
+    }
+
+    total += modifier;
+
+    return total;
+}
+
 function rollOnTable(table, ignoreShields = false) {
     let roll = rollDice(table.length);
-    if(ignoreShields && isOdd(roll)){
-        roll += 1;
-        console.log('shields ignored');
+    if(ignoreShields && !isOdd(roll)){
+        roll -= 1;
+    }
+    return table[roll - 1];
+}
+
+function rollOnTableString(table, rollString, ignoreShields = false){
+    let roll = rollDiceString(rollString);
+    if(ignoreShields && !isOdd(roll)){
+        roll -= 1;
     }
     return table[roll - 1];
 }
@@ -52,9 +81,11 @@ function ViewModel() {
 
         // Generate armor
         let armor = classData.armor;
-        if (armor.includes("1d")) {
-            const sides = parseInt(armor.split("d")[1], 10);
-            armor = rollOnTable(data.armor.slice(0, sides), classData.ignoreShields === true);
+        if(classData.shieldsOnly){
+            armor = rollDice(2) == 1 ? "None" : "Shield";
+        }
+        else if (armor.includes("1d")) {
+            armor = rollOnTableString(data.armor, armor, classData.ignoreShields === true);
         }
         self.armor(armor);
 
